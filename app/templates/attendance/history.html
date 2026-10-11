@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Historique Fréquentation Cantine - CantineMaster{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">📜 Journal d'Audit &amp; Fréquentation</h1>
+      <p class="text-sm text-slate-500 mt-0.5">
+        Traçabilité exhaustive de l'ensemble des tentatives de passage (RG-FRQ-04).
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('attendance.terminal') }}" 
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer">
+        <span>🎟️</span>
+        <span>Borne de Pointage</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Filter Pills -->
+  <div class="flex items-center gap-2">
+    <a href="{{ url_for('attendance.history') }}" 
+       class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all {{ 'bg-indigo-600 text-white shadow-xs' if not status_filter else 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+      Tous les passages
+    </a>
+    <a href="{{ url_for('attendance.history', status='AUTORISE') }}" 
+       class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all {{ 'bg-emerald-600 text-white shadow-xs' if status_filter == 'AUTORISE' else 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+      Passages Autorisés
+    </a>
+    <a href="{{ url_for('attendance.history', status='REFUSE') }}" 
+       class="px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all {{ 'bg-rose-600 text-white shadow-xs' if status_filter == 'REFUSE' else 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+      Passages Refusés
+    </a>
+  </div>
+
+  <!-- Attendance Table -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50/80 text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+          <tr>
+            <th class="px-6 py-3.5">Horodatage</th>
+            <th class="px-6 py-3.5">Matricule</th>
+            <th class="px-6 py-3.5">Élève</th>
+            <th class="px-6 py-3.5">Classe</th>
+            <th class="px-6 py-3.5">Service</th>
+            <th class="px-6 py-3.5">Décision</th>
+            <th class="px-6 py-3.5">Motif de Refus</th>
+            <th class="px-6 py-3.5 text-right">Opérateur</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for log in logs %}
+          <tr class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-4 font-mono text-xs text-slate-500">
+              {{ log.timestamp.strftime('%d/%m/%Y à %H:%M:%S') }}
+            </td>
+            <td class="px-6 py-4 font-mono font-bold text-xs text-indigo-600">
+              {{ log.student.matricule }}
+            </td>
+            <td class="px-6 py-4">
+              <a href="{{ url_for('students.student_detail', student_id=log.student_id) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                {{ log.student.full_name }}
+              </a>
+            </td>
+            <td class="px-6 py-4 text-xs text-slate-600">{{ log.student.class_name }}</td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
+                {{ log.service_type }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              {% if log.is_authorized %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  AUTORISÉ
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  REFUSÉ
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 font-mono text-xs text-slate-500">
+              {{ log.refusal_reason or '—' }}
+            </td>
+            <td class="px-6 py-4 text-right text-xs text-slate-500 font-medium">
+              {{ log.scanned_by.full_name if log.scanned_by else 'Borne Automatique' }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="px-6 py-12 text-center text-sm text-slate-400">
+              Aucun historique de pointage disponible.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

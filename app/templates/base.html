@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CantineMaster - Gestion de Cantine Scolaire{% endblock %}</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS v4 Browser -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  
+  <style type="text/tailwindcss">
+    @theme {
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --color-primary-50: #eef2ff;
+      --color-primary-100: #e0e7ff;
+      --color-primary-500: #6366f1;
+      --color-primary-600: #4f46e5;
+      --color-primary-700: #4338ca;
+    }
+  </style>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-full flex flex-col text-slate-800 antialiased selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+
+  <!-- Navigation Bar (Pleine largeur sans grande marge, tout sur la ligne) -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b border-slate-200/90 shadow-xs w-full">
+    <div class="w-full px-2 sm:px-3 lg:px-4 flex items-center justify-between h-16 gap-2">
+      
+      <!-- Logo / Marque -->
+      <a href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('auth.login') }}" class="flex items-center gap-2 shrink-0 group">
+        <span class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center text-base shadow-sm group-hover:scale-105 transition-transform">
+          🍽️
+        </span>
+        <span class="font-extrabold text-base tracking-tight bg-gradient-to-r from-slate-900 to-indigo-900 bg-clip-text text-transparent">
+          CantineMaster
+        </span>
+      </a>
+
+      <!-- Liens de Navigation Desktop (Sur toute la ligne, fluidité garantie de 1024px à 4K) -->
+      {% if current_user.is_authenticated %}
+      <nav class="hidden md:flex items-center gap-0.5 xl:gap-1.5 flex-nowrap min-w-0">
+        <a href="{{ url_for('main.dashboard') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1 xl:gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if request.endpoint == 'main.dashboard' else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>📊</span>
+          <span>Tableau de Bord</span>
+        </a>
+
+        <a href="{{ url_for('attendance.terminal') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1 xl:gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if 'attendance' in request.endpoint else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>🎟️</span>
+          <span>Pointage</span>
+        </a>
+
+        {% if current_user.is_gestionnaire %}
+        <a href="{{ url_for('students.list_students') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1 xl:gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if 'students' in request.endpoint else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>🎓</span>
+          <span>Étudiants</span>
+        </a>
+
+        <a href="{{ url_for('subscriptions.list_subscriptions') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if 'subscriptions' in request.endpoint else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>📋</span>
+          <span>Abonnements</span>
+        </a>
+
+        <a href="{{ url_for('payments.list_payments') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1 xl:gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if 'payments' in request.endpoint else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>💳</span>
+          <span>Paiements</span>
+        </a>
+        {% endif %}
+
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('users.list_users') }}" 
+           class="px-1.5 xl:px-3 py-1.5 rounded-lg text-xs xl:text-sm font-semibold transition-all whitespace-nowrap flex items-center gap-1 xl:gap-1.5 {{ 'bg-indigo-50 text-indigo-700 shadow-xs ring-1 ring-indigo-200/60 font-bold' if 'users' in request.endpoint else 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80' }}">
+          <span>👥</span>
+          <span>Utilisateurs</span>
+        </a>
+        {% endif %}
+      </nav>
+
+      <!-- Profil Utilisateur & Déconnexion (Compact & élégant) -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div class="flex items-center gap-1.5 bg-slate-100/90 px-1.5 sm:px-2.5 py-1 rounded-full border border-slate-200/70 text-xs">
+          <span class="w-5 h-5 rounded-full bg-slate-800 text-white font-bold flex items-center justify-center text-[10px] shrink-0">
+            {{ current_user.username[:1].upper() }}
+          </span>
+          <span class="font-semibold text-slate-700 hidden 2xl:inline max-w-[120px] truncate">{{ current_user.full_name }}</span>
+          {% if current_user.role == 'ADMIN' %}
+            <span class="hidden sm:inline px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-rose-100 text-rose-700 rounded-full border border-rose-200/60">Admin</span>
+          {% elif current_user.role == 'GESTIONNAIRE' %}
+            <span class="hidden sm:inline px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200/60">Gestion</span>
+          {% else %}
+            <span class="hidden sm:inline px-1.5 py-0.5 text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200/60">Agent</span>
+          {% endif %}
+        </div>
+
+        <a href="{{ url_for('auth.logout') }}" 
+           class="hidden sm:inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors border border-slate-200 hover:border-rose-200 shrink-0"
+           title="Se déconnecter">
+          Déconnexion
+        </a>
+
+        <!-- Bouton Menu Mobile (Hamburger) -->
+        <button type="button" 
+                id="mobile-menu-btn"
+                onclick="document.getElementById('mobile-nav').classList.toggle('hidden')"
+                class="md:hidden p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 border border-slate-200 shrink-0"
+                aria-label="Menu principal">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Tiroir Mobile Accordéon (Visible uniquement sur mobile si ouvert) -->
+    {% if current_user.is_authenticated %}
+    <div id="mobile-nav" class="hidden md:hidden border-t border-slate-200 bg-white/95 px-4 py-3 space-y-1">
+      <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if request.endpoint == 'main.dashboard' else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>📊</span><span>Tableau de Bord</span>
+      </a>
+      <a href="{{ url_for('attendance.terminal') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if 'attendance' in request.endpoint else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>🎟️</span><span>Borne Pointage</span>
+      </a>
+      {% if current_user.is_gestionnaire %}
+      <a href="{{ url_for('students.list_students') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if 'students' in request.endpoint else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>🎓</span><span>Étudiants</span>
+      </a>
+      <a href="{{ url_for('subscriptions.list_subscriptions') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if 'subscriptions' in request.endpoint else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>📋</span><span>Abonnements</span>
+      </a>
+      <a href="{{ url_for('payments.list_payments') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if 'payments' in request.endpoint else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>💳</span><span>Paiements</span>
+      </a>
+      {% endif %}
+      {% if current_user.is_admin %}
+      <a href="{{ url_for('users.list_users') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold {{ 'bg-indigo-50 text-indigo-700' if 'users' in request.endpoint else 'text-slate-700 hover:bg-slate-50' }}">
+        <span>👥</span><span>Utilisateurs</span>
+      </a>
+      {% endif %}
+      <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs text-slate-500 font-medium">Connecté : <strong>{{ current_user.username }}</strong> ({{ current_user.role }})</span>
+        <a href="{{ url_for('auth.logout') }}" class="text-xs font-bold text-rose-600 hover:underline">Déconnexion ➔</a>
+      </div>
+    </div>
+    {% endif %}
+
+  </header>
+
+  <!-- Flash Messages (Pleine largeur avec marges douces) -->
+  <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2.5">
+          {% for category, message in messages %}
+            {% if category == 'success' %}
+              <div class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-sm shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-emerald-500 font-bold">✓</span>
+                  <span>{{ message }}</span>
+                </div>
+              </div>
+            {% elif category == 'danger' %}
+              <div class="flex items-center justify-between p-3.5 rounded-xl bg-rose-50 border border-rose-200/80 text-rose-800 text-sm shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-rose-500 font-bold">⚠️</span>
+                  <span>{{ message }}</span>
+                </div>
+              </div>
+            {% elif category == 'warning' %}
+              <div class="flex items-center justify-between p-3.5 rounded-xl bg-amber-50 border border-amber-200/80 text-amber-800 text-sm shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-amber-500 font-bold">🔔</span>
+                  <span>{{ message }}</span>
+                </div>
+              </div>
+            {% else %}
+              <div class="flex items-center justify-between p-3.5 rounded-xl bg-sky-50 border border-sky-200/80 text-sky-800 text-sm shadow-xs animate-in fade-in slide-in-from-top-1 duration-200">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-sky-500 font-bold">ℹ️</span>
+                  <span>{{ message }}</span>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  </div>
+
+  <!-- Main Content Container (Sur toute la ligne sans grande marge superflue) -->
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200 bg-white/60 py-6 text-center text-xs text-slate-500">
+    <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-slate-700">CantineMaster &copy; 2026</span>
+        <span>•</span>
+        <span>Système de Restauration Scolaire</span>
+      </div>
+      <div class="text-slate-400">
+        Support d'apprentissage pour le module <strong class="text-indigo-600 font-semibold">Test et Validation des Logiciels</strong>
+      </div>
+    </div>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

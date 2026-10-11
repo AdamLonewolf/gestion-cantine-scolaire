@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Abonnements - CantineMaster{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">📋 Gestion des Abonnements Mensuels</h1>
+      <p class="text-sm text-slate-500 mt-0.5">
+        Suivi des souscriptions, échéances et soldes de paiement (RG-ABO-01 à RG-ABO-05).
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('subscriptions.new_subscription') }}" 
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer">
+        <span>➕</span>
+        <span>Nouvel Abonnement</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Filter Pills -->
+  <div class="flex items-center gap-2 overflow-x-auto pb-1">
+    <a href="{{ url_for('subscriptions.list_subscriptions') }}" 
+       class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ 'bg-indigo-600 text-white shadow-xs' if not status_filter else 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+      Tous les statuts
+    </a>
+    {% for s in statuses %}
+    <a href="{{ url_for('subscriptions.list_subscriptions', status=s) }}" 
+       class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all {{ 'bg-indigo-600 text-white shadow-xs' if status_filter == s else 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' }}">
+      {{ s }}
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Subscriptions Table -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50/80 text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+          <tr>
+            <th class="px-6 py-3.5">ID</th>
+            <th class="px-6 py-3.5">Élève</th>
+            <th class="px-6 py-3.5">Classe</th>
+            <th class="px-6 py-3.5">Formule</th>
+            <th class="px-6 py-3.5">Période de Validité</th>
+            <th class="px-6 py-3.5">Tarif</th>
+            <th class="px-6 py-3.5">Reste Dû</th>
+            <th class="px-6 py-3.5">Statut</th>
+            <th class="px-6 py-3.5">Renouv.</th>
+            <th class="px-6 py-3.5 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for sub in subscriptions %}
+          <tr class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-4 text-xs font-mono text-slate-400">#{{ sub.id }}</td>
+            <td class="px-6 py-4">
+              <a href="{{ url_for('students.student_detail', student_id=sub.student_id) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                {{ sub.student.full_name }}
+              </a>
+              <div class="text-xs font-mono text-slate-400">{{ sub.student.matricule }}</div>
+            </td>
+            <td class="px-6 py-4 text-xs text-slate-600">{{ sub.student.class_name }}</td>
+            <td class="px-6 py-4 font-medium text-slate-800">{{ sub.plan.name }}</td>
+            <td class="px-6 py-4 text-xs font-mono text-slate-600">
+              {{ sub.start_date.strftime('%d/%m/%Y') }} &rarr; {{ sub.end_date.strftime('%d/%m/%Y') }}
+            </td>
+            <td class="px-6 py-4 font-bold text-slate-900 whitespace-nowrap">{{ "%.2f"|format(sub.plan.price_monthly) }}&nbsp;€</td>
+            <td class="px-6 py-4">
+              {% if sub.balance_due > 0 %}
+                <span class="font-bold text-rose-600 text-xs bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100 whitespace-nowrap">
+                  {{ "%.2f"|format(sub.balance_due) }}&nbsp;€
+                </span>
+              {% else %}
+                <span class="font-bold text-emerald-700 text-xs bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                  Soldé
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4">
+              {% if sub.status == 'ACTIF' %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">ACTIF</span>
+              {% elif sub.status == 'EXPIRE' %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600">EXPIRÉ</span>
+              {% elif sub.status == 'SUSPENDU' %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/60">SUSPENDU</span>
+              {% elif sub.status == 'RESILIE' %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-400">RÉSILIÉ</span>
+              {% else %}
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60">{{ sub.status }}</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-xs">
+              {% if sub.auto_renew %}
+                <span class="text-indigo-600 font-bold">Auto</span>
+              {% else %}
+                <span class="text-slate-400">Manuel</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-right">
+              {% if sub.balance_due > 0 %}
+                <a href="{{ url_for('payments.new_payment', subscription_id=sub.id, student_id=sub.student_id) }}" 
+                   class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-colors">
+                  Encaisser
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="10" class="px-6 py-12 text-center text-sm text-slate-400">
+              Aucun abonnement trouvé pour ce filtre.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

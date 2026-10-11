@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Fiche Élève : {{ student.full_name }} - CantineMaster{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header Card -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-2xl font-extrabold">
+        {{ student.first_name[:1] }}{{ student.last_name[:1] }}
+      </div>
+      <div>
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">{{ student.full_name }}</h1>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+            {{ student.matricule }}
+          </span>
+          {% if student.is_active %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              ACTIF
+            </span>
+          {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
+              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+              INACTIF
+            </span>
+          {% endif %}
+        </div>
+        <p class="text-xs text-slate-500 mt-1">
+          Classe : <strong class="text-slate-700">{{ student.class_name }}</strong> &bull; Email : {{ student.email }} &bull; Tél : {{ student.phone or 'Non renseigné' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Actions Header -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <a href="{{ url_for('subscriptions.new_subscription', student_id=student.id) }}" 
+         class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer">
+        ➕ Nouvel Abonnement
+      </a>
+      <a href="{{ url_for('students.edit_student', student_id=student.id) }}" 
+         class="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-colors">
+        ✏️ Modifier
+      </a>
+      <form method="POST" action="{{ url_for('students.toggle_status', student_id=student.id) }}" class="inline" onsubmit="return confirm('Confirmer le changement de statut ?');">
+        {% if student.is_active %}
+          <button type="submit" class="px-3.5 py-2 rounded-xl border border-rose-200 text-rose-700 hover:bg-rose-50 text-xs font-semibold transition-colors cursor-pointer">
+            Désactiver
+          </button>
+        {% else %}
+          <button type="submit" class="px-3.5 py-2 rounded-xl border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold transition-colors cursor-pointer">
+            Activer
+          </button>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+
+  <!-- Active Subscription Highlight Card -->
+  <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-6 shadow-md">
+    <div class="flex items-center justify-between pb-4 border-b border-indigo-800/40">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📋</span>
+        <h2 class="font-bold text-base tracking-wide">Abonnement en Cours de Validité</h2>
+      </div>
+      <div>
+        {% if current_sub %}
+          <span class="px-3 py-1 rounded-full text-xs font-extrabold tracking-wide uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+            {{ current_sub.status }}
+          </span>
+        {% else %}
+          <span class="px-3 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700">
+            Aucun forfait actif
+          </span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if current_sub %}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-5">
+      <div>
+        <div class="text-xs uppercase tracking-wider text-indigo-300 font-semibold">Formule de Restauration</div>
+        <div class="text-lg font-bold text-white mt-1">{{ current_sub.plan.name }}</div>
+        <div class="text-xs text-indigo-200 mt-0.5">{{ current_sub.plan.days_allowed_labels }}</div>
+      </div>
+
+      <div>
+        <div class="text-xs uppercase tracking-wider text-indigo-300 font-semibold">Période Couverte</div>
+        <div class="text-base font-semibold text-white mt-1">
+          {{ current_sub.start_date.strftime('%d/%m/%Y') }} &rarr; {{ current_sub.end_date.strftime('%d/%m/%Y') }}
+        </div>
+        <div class="text-xs text-indigo-200 mt-0.5">Renouvellement auto : {{ 'Oui' if current_sub.auto_renew else 'Non' }}</div>
+      </div>
+
+      <div class="flex flex-col sm:items-end justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-indigo-300 font-semibold sm:text-right">Solde Restant Dû</div>
+          <div class="text-2xl font-extrabold sm:text-right mt-1 {{ 'text-rose-400' if current_sub.balance_due > 0 else 'text-emerald-400' }}">
+            {{ "%.2f"|format(current_sub.balance_due) }} €
+          </div>
+        </div>
+
+        {% if current_sub.balance_due > 0 %}
+        <div class="mt-3">
+          <a href="{{ url_for('payments.new_payment', subscription_id=current_sub.id, student_id=student.id) }}" 
+             class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all">
+            💳 Encaisser Règlement
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="py-6 text-center">
+      <p class="text-slate-400 text-sm mb-3">Cet élève n'a actuellement aucun abonnement actif assigné.</p>
+      <a href="{{ url_for('subscriptions.new_subscription', student_id=student.id) }}" 
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-colors">
+        Attribuer un abonnement
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Grids: Subscription History & Payment History -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Subscriptions History -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-sm">Historique des Abonnements</h3>
+        <span class="text-xs text-slate-400 font-medium">{{ subscriptions|length }} forfait(s)</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+            <tr>
+              <th class="px-4 py-2.5">Période</th>
+              <th class="px-4 py-2.5">Formule</th>
+              <th class="px-4 py-2.5">Statut</th>
+              <th class="px-4 py-2.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for sub in subscriptions %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="px-4 py-3 font-mono">{{ sub.start_date.strftime('%d/%m') }} au {{ sub.end_date.strftime('%d/%m/%y') }}</td>
+              <td class="px-4 py-3 font-medium">{{ sub.plan.name }}</td>
+              <td class="px-4 py-3">
+                {% if sub.status == 'ACTIF' %}
+                  <span class="px-2 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700">ACTIF</span>
+                {% elif sub.status == 'EXPIRE' %}
+                  <span class="px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600">EXPIRÉ</span>
+                {% elif sub.status == 'SUSPENDU' %}
+                  <span class="px-2 py-0.5 rounded-full font-bold bg-rose-50 text-rose-700">SUSPENDU</span>
+                {% elif sub.status == 'RESILIE' %}
+                  <span class="px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-400">RÉSILIÉ</span>
+                {% else %}
+                  <span class="px-2 py-0.5 rounded-full font-bold bg-amber-50 text-amber-700">{{ sub.status }}</span>
+                {% endif %}
+              </td>
+              <td class="px-4 py-3 text-right space-x-1">
+                {% if sub.status in ['ACTIF', 'EXPIRE'] %}
+                <form method="POST" action="{{ url_for('subscriptions.renew_subscription', sub_id=sub.id) }}" class="inline">
+                  <button type="submit" class="px-2.5 py-1 rounded-md text-[11px] font-semibold border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer">
+                    Renouveler
+                  </button>
+                </form>
+                {% endif %}
+                {% if sub.status == 'ACTIF' %}
+                <form method="POST" action="{{ url_for('subscriptions.cancel_subscription', sub_id=sub.id) }}" class="inline" onsubmit="return confirm('Résilier cet abonnement ?');">
+                  <button type="submit" class="px-2.5 py-1 rounded-md text-[11px] font-semibold border border-rose-200 hover:bg-rose-50 text-rose-600 cursor-pointer">
+                    Résilier
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="px-4 py-6 text-center text-slate-400">Aucun historique d'abonnement.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payments History -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="font-bold text-slate-900 text-sm">Historique des Règlements</h3>
+        <span class="text-xs text-slate-400 font-medium">{{ payments|length }} paiement(s)</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+            <tr>
+              <th class="px-4 py-2.5">Date</th>
+              <th class="px-4 py-2.5">Quittance</th>
+              <th class="px-4 py-2.5">Mode</th>
+              <th class="px-4 py-2.5">Montant</th>
+              <th class="px-4 py-2.5 text-right">Reçu</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for p in payments %}
+            <tr class="hover:bg-slate-50/50">
+              <td class="px-4 py-3 text-slate-600">{{ p.payment_date.strftime('%d/%m/%Y') }}</td>
+              <td class="px-4 py-3 font-mono font-bold text-slate-800">{{ p.receipt_number or p.reference }}</td>
+              <td class="px-4 py-3">
+                <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-medium">{{ p.payment_method }}</span>
+              </td>
+              <td class="px-4 py-3 font-bold text-slate-900">{{ "%.2f"|format(p.amount) }} €</td>
+              <td class="px-4 py-3 text-right">
+                <a href="{{ url_for('payments.payment_receipt', payment_id=p.id) }}" target="_blank" class="px-2.5 py-1 rounded-md border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold inline-flex items-center gap-1">
+                  <span>🖨️</span>
+                  <span>Reçu</span>
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="px-4 py-6 text-center text-slate-400">Aucun règlement enregistré.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Attendances History -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <h3 class="font-bold text-slate-900 text-sm">Passages Récents au Réfectoire</h3>
+      <span class="text-xs text-slate-400 font-medium">{{ attendances|length }} pointage(s)</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+          <tr>
+            <th class="px-6 py-3">Horodatage</th>
+            <th class="px-6 py-3">Service</th>
+            <th class="px-6 py-3">Décision</th>
+            <th class="px-6 py-3">Motif (en cas de rejet)</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for att in attendances %}
+          <tr class="hover:bg-slate-50/50">
+            <td class="px-6 py-3 font-mono text-slate-600">{{ att.timestamp.strftime('%d/%m/%Y à %H:%M:%S') }}</td>
+            <td class="px-6 py-3 font-medium">{{ att.service_type }}</td>
+            <td class="px-6 py-3">
+              {% if att.is_authorized %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  AUTORISÉ
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  REFUSÉ
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-3 text-slate-500 font-mono">{{ att.refusal_reason or '—' }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" class="px-6 py-8 text-center text-slate-400">Aucun passage enregistré pour cet élève.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

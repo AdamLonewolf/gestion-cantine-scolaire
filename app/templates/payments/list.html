@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Caisse & Paiements - CantineMaster{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900">💳 Suivi des Encaissements &amp; Caisse</h1>
+      <p class="text-sm text-slate-500 mt-0.5">
+        Historique des transactions et facturation (RG-PAY-01 à RG-PAY-05).
+      </p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="bg-emerald-50 border border-emerald-200/80 px-3.5 py-1.5 rounded-xl">
+        <span class="text-xs text-emerald-800 font-semibold">Total Encaissé :</span>
+        <strong class="text-emerald-700 text-sm ml-1 font-bold">{{ "%.2f"|format(total_amount) }} €</strong>
+      </div>
+      <a href="{{ url_for('payments.new_payment') }}" 
+         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm hover:shadow transition-all cursor-pointer">
+        <span>➕</span>
+        <span>Encaisser un Règlement</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Payments Table -->
+  <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm">
+        <thead class="bg-slate-50/80 text-xs text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+          <tr>
+            <th class="px-6 py-3.5">Réf. Règlement</th>
+            <th class="px-6 py-3.5">N° Quittance</th>
+            <th class="px-6 py-3.5">Date</th>
+            <th class="px-6 py-3.5">Élève</th>
+            <th class="px-6 py-3.5">Abonnement Lié</th>
+            <th class="px-6 py-3.5">Moyen</th>
+            <th class="px-6 py-3.5">Montant</th>
+            <th class="px-6 py-3.5">Statut</th>
+            <th class="px-6 py-3.5 text-right">Quittance</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for p in payments %}
+          <tr class="hover:bg-slate-50/50 transition-colors">
+            <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ p.reference }}</td>
+            <td class="px-6 py-4 font-mono font-bold text-xs text-indigo-700">{{ p.receipt_number }}</td>
+            <td class="px-6 py-4 text-xs text-slate-600">{{ p.payment_date.strftime('%d/%m/%Y') }}</td>
+            <td class="px-6 py-4">
+              <a href="{{ url_for('students.student_detail', student_id=p.student_id) }}" class="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                {{ p.student.full_name }}
+              </a>
+            </td>
+            <td class="px-6 py-4 text-xs text-slate-600">
+              #{{ p.subscription_id }} ({{ p.subscription.plan.name }})
+            </td>
+            <td class="px-6 py-4">
+              <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
+                {{ p.payment_method }}
+              </span>
+            </td>
+            <td class="px-6 py-4 font-bold text-slate-900">
+              {{ "%.2f"|format(p.amount) }} €
+            </td>
+            <td class="px-6 py-4">
+              {% if p.status == 'PAYE' %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                  RÉGLÉ
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+                  {{ p.status }}
+                </span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-right">
+              <a href="{{ url_for('payments.payment_receipt', payment_id=p.id) }}" target="_blank" 
+                 class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 transition-colors">
+                <span>🖨️</span>
+                <span>Reçu</span>
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" class="px-6 py-12 text-center text-sm text-slate-400">
+              Aucun paiement enregistré pour l'instant.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
