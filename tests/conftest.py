@@ -56,6 +56,21 @@ def agent_user(app):
     )
 
 @pytest.fixture
+def agent_user_desactive(app):
+    """Utilisateur agent de pointage de test (compte désactivé)"""
+    user = AuthService.create_user(
+        username="agent_test_desac",
+        email="agent_desac@test.fr",
+        password="Password123!",
+        full_name="Agent Désactivé",
+        role=User.ROLE_AGENT
+    )
+    # Désactivation manuelle après création
+    user.is_active = False
+    db.session.commit()
+    return user
+
+@pytest.fixture
 def auth_admin_client(client, admin_user):
     """Client authentifié avec les droits Administrateur."""
     client.post('/login', data={'username': 'admin_test', 'password': 'Password123!'})
@@ -73,6 +88,7 @@ def auth_agent_client(client, agent_user):
     client.post('/login', data={'username': 'agent_test', 'password': 'Password123!'})
     return client
 
+# FIXTURES PLANS
 @pytest.fixture
 def sample_plan(app):
     """Formule d'abonnement 5 jours (Lundi à Vendredi)."""
@@ -103,6 +119,7 @@ def sample_plan_4j(app):
     db.session.commit()
     return plan
 
+# FIXTURES ETUDIANTS
 @pytest.fixture
 def sample_student(app):
     """Étudiant de test actif."""
@@ -117,3 +134,79 @@ def sample_student(app):
     db.session.add(student)
     db.session.commit()
     return student
+
+@pytest.fixture
+def sample_student_inactif(app):
+    """Étudiant inactif."""
+    student = Student(
+        matricule="ETU-99002",
+        first_name="Marie",
+        last_name="Dupont",
+        email="marie.dupont@test.fr",
+        class_name="Terminale Test",
+        is_active=False       
+    )
+    db.session.add(student)
+    db.session.commit()
+    return student
+
+# FIXTURES ABONNEMENTS
+@pytest.fixture
+def sample_subscription_active(app, sample_student, sample_plan) :
+    """Abonnement actif couvrant la période actuelle."""
+    subscription = Subscription(
+        student_id=sample_student.id,   
+        plan_id=sample_plan.id,      
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=30),
+        status="ACTIF",                
+        auto_renew=True
+    )
+    db.session.add(subscription)
+    db.session.commit()
+    return subscription
+
+@pytest.fixture
+def sample_subscription_expire(app, sample_student, sample_plan):
+    """Abonnement Expiré"""
+    subscription = Subscription(
+        student_id=sample_student.id,
+        plan_id=sample_plan.id,
+        start_date=date.today() - timedelta(days=60), 
+        end_date=date.today() - timedelta(days=30),   
+        status="EXPIRE",
+        auto_renew=False
+    )
+    db.session.add(subscription)
+    db.session.commit()
+    return subscription
+
+@pytest.fixture
+def sample_subscription_suspendu(app, sample_student, sample_plan):
+    """Abonnement suspendu pour impayé."""
+    subscription = Subscription(
+        student_id=sample_student.id,
+        plan_id=sample_plan.id,
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=30),
+        status="SUSPENDU",
+        auto_renew=False
+    )
+    db.session.add(subscription)
+    db.session.commit()
+    return subscription
+
+@pytest.fixture
+def sample_subscription_en_attente(app, sample_student, sample_plan):
+    """Abonnement EN_ATTENTE_PAIEMENT — pas encore payé."""
+    subscription = Subscription(
+        student_id=sample_student.id,
+        plan_id=sample_plan.id,
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=30),
+        status=Subscription.STATUS_EN_ATTENTE,
+        auto_renew=True
+    )
+    db.session.add(subscription)
+    db.session.commit()
+    return subscription
