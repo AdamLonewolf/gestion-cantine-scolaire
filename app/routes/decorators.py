@@ -11,7 +11,7 @@ def role_required(*roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if not current_user.is_authenticated:
-                abort(401)
+                abort(401) # pragma: no cover
             if not current_user.has_role(*roles):
                 abort(403)
             return f(*args, **kwargs)

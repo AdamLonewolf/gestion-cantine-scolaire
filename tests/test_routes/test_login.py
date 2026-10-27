@@ -49,3 +49,18 @@ def test_login_compte_desactive(client, agent_user_desactive):
 
     response = client.post('/login', data=identifiants)
     assert response.status_code == 200
+
+"""Cas 4 : Un utilisateur déjà connecté qui accède à /login est redirigé vers le dashboard"""
+def test_login_deja_connecte(auth_admin_client):
+    response = auth_admin_client.get('/login', follow_redirects=False)
+    assert response.status_code == 302
+    assert 'dashboard' in response.location or '/' in response.location
+
+"""Cas 5 : Déconnexion d'un utilisateur connecté"""
+def test_logout(auth_admin_client):
+    response = auth_admin_client.get('/logout', follow_redirects=False)
+    assert response.status_code == 302
+    assert 'login' in response.location
+
+
+

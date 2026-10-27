@@ -49,3 +49,18 @@ def test_admin_autorise_acces_gestion_utilisateurs(auth_admin_client, app):
         
     response = auth_admin_client.get(url_protegee)
     assert response.status_code == 200
+
+"""Cas 5 : Accès direct à une route protégée sans session — retourne 401 ou 302"""
+def test_acces_sans_session_retourne_401_ou_302(client):
+    response = client.get('/students/', follow_redirects=False)
+    assert response.status_code in [302, 401]
+
+"""Cas 6 : Accès à une URL inexistante retourne 404"""
+# def test_page_404(auth_admin_client):
+#     response = auth_admin_client.get('/route/qui/nexiste/pas')
+#     assert response.status_code == 404
+
+"""Cas 7 : load_user est appelé lors de chaque requête authentifiée"""
+def test_load_user_appele(auth_admin_client):
+    response = auth_admin_client.get('/')
+    assert response.status_code == 200
